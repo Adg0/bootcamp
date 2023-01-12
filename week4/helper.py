@@ -1,11 +1,9 @@
 import json
 import base64
-import time
-from algosdk.v2client import algod
-from algosdk.future.transaction import AssetConfigTxn, AssetTransferTxn
-from algosdk.future.transaction import *
-from algosdk.future import transaction
 from algosdk import account, mnemonic
+from algosdk.v2client import algod
+from algosdk.future import transaction
+from algosdk.future.transaction import *
 from pyteal import compileTeal, Mode
 from contract import approval_program, clear_state_program
 
@@ -240,24 +238,6 @@ def compile_program(client, source_code):
     compile_response = client.compile(source_code)
     return base64.b64decode(compile_response["result"])
 
-# helper function that waits for a given txid to be confirmed by the network
-def wait_for_confirmation(client, txid):
-    last_round = client.status().get("last-round")
-    time.sleep(10)
-    txinfo = client.pending_transaction_info(txid)
-    while not (txinfo.get("confirmed-round") and txinfo.get("confirmed-round") > 0):
-        print("Waiting for confirmation...")
-        last_round += 1
-        client.status_after_block(last_round)
-        txinfo = client.pending_transaction_info(txid)
-    print(
-        "Transaction {} confirmed in round {}.".format(
-            txid, txinfo.get("confirmed-round")
-        )
-    )
-    return txinfo
-
-
 def wait_for_round(client, round):
     last_round = client.status().get("last-round")
     print(f"Waiting for round {round}")
@@ -281,13 +261,13 @@ def create_app(
     sender = account.address_from_private_key(private_key)
 
     # declare on_complete as NoOp
-    on_complete = transaction.OnComplete.NoOpOC.real
+    on_complete = OnComplete.NoOpOC.real
 
     # get node suggested parameters
     params = client.suggested_params()
 
     # create unsigned transaction
-    txn = transaction.ApplicationCreateTxn(
+    txn = ApplicationCreateTxn(
         sender,
         params,
         on_complete,
@@ -326,7 +306,7 @@ def opt_in_app(client, private_key, index):
     params = client.suggested_params()
 
     # create unsigned transaction
-    txn = transaction.ApplicationOptInTxn(sender, params, index)
+    txn = ApplicationOptInTxn(sender, params, index)
 
     # sign transaction
     signed_txn = txn.sign(private_key)
@@ -353,7 +333,7 @@ def call_app(client, private_key, index, app_args, accounts, foreign_assets):
     params = client.suggested_params()
 
     # create unsigned transaction
-    txn = transaction.ApplicationNoOpTxn(sender=sender, sp=params, index=index, app_args=app_args, accounts=accounts, foreign_assets=foreign_assets)
+    txn = ApplicationNoOpTxn(sender=sender, sp=params, index=index, app_args=app_args, accounts=accounts, foreign_assets=foreign_assets)
 
     # sign transaction
     signed_txn = txn.sign(private_key)
@@ -415,7 +395,7 @@ def delete_app(client, private_key, index):
     params = client.suggested_params()
 
     # create unsigned transaction
-    txn = transaction.ApplicationDeleteTxn(sender, params, index)
+    txn = ApplicationDeleteTxn(sender, params, index)
 
     # sign transaction
     signed_txn = txn.sign(private_key)
@@ -441,7 +421,7 @@ def close_out_app(client, private_key, index):
     params = client.suggested_params()
 
     # create unsigned transaction
-    txn = transaction.ApplicationCloseOutTxn(sender, params, index)
+    txn = ApplicationCloseOutTxn(sender, params, index)
 
     # sign transaction
     signed_txn = txn.sign(private_key)
@@ -467,7 +447,7 @@ def clear_app(client, private_key, index):
     params = client.suggested_params()
 
     # create unsigned transaction
-    txn = transaction.ApplicationClearStateTxn(sender, params, index)
+    txn = ApplicationClearStateTxn(sender, params, index)
 
     # sign transaction
     signed_txn = txn.sign(private_key)
@@ -521,8 +501,8 @@ def main():
     local_bytes = 1
     global_ints = 8 # 5 for setup and 3 for choice
     global_bytes = 1
-    global_schema = transaction.StateSchema(global_ints, global_bytes)
-    local_schema = transaction.StateSchema(local_ints, local_bytes)
+    global_schema = StateSchema(global_ints, global_bytes)
+    local_schema = StateSchema(local_ints, local_bytes)
 
     # get PyTeal approval program
     approval_program_ast = approval_program()
