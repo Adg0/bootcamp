@@ -1,5 +1,7 @@
+import os
 import json
 import base64
+from dotenv import load_dotenv
 from algosdk import account, mnemonic
 from algosdk.v2client import algod
 from algosdk.future import transaction
@@ -7,8 +9,11 @@ from algosdk.future.transaction import *
 from pyteal import compileTeal, Mode
 from contract import approval_program, clear_state_program
 
+# Security(protecting private key)
+load_dotenv("../.env")
+
 # Funding Account
-m = "flip village hover dad model ritual occur employ clog elephant tomato half when pulp bright endorse misery twist advance clean stock fuel spare able snake"
+m = os.environ.get("MNEMONIC") # This is YOUR address. Make sure it is funded with atleast 4Algo.
 pk = mnemonic.to_public_key(m)
 sk = mnemonic.to_private_key(m)
 
@@ -477,9 +482,9 @@ def main():
     print("Generating Test Accounts:")
     accounts = generate_accounts(3)
 
-    # Fund testing accoutns
+    # Fund testing accounts with 1-Algo each
     print("\nFunding Test Accounts:")
-    fund_accounts(algod_client, sk, accounts, 2000000)
+    fund_accounts(algod_client, sk, accounts, 1000000)
 
     # Create ENB
     print("\nCreating ENB ASA")
