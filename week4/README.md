@@ -27,7 +27,7 @@ The visual output is generated with [`tealer`](https://github.com/crytic/tealer)
 
 This is a voting app simulation.
 
-3 accounts are generated for testing. And funded by the an account on testnet, each with 1 algo.
+3 accounts are generated for testing. And funded by an account on testnet, each with 1 algo.
 
 An ASA with unit-name `ENB` is needed for voting, minimum of `1000 uints`.
 
