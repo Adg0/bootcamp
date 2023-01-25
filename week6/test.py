@@ -135,10 +135,13 @@ class TestContract(unittest.TestCase):
         # Wait for registration round to begin
         wait_for_round(TestContract.algod_client, global_state['RegBegin'])
 
+        opt_in_app(TestContract.algod_client, TestContract.accounts[1]['sk'], TestContract.app_index)
         opt_in_app(TestContract.algod_client, TestContract.accounts[2]['sk'], TestContract.app_index)
         opt_in_app(TestContract.algod_client, TestContract.accounts[3]['sk'], TestContract.app_index)
+        local_state_1 = TestContract.algod_indexer.lookup_account_application_local_state(application_id=TestContract.app_index,address=TestContract.accounts[1]['pk'])
         local_state_2 = TestContract.algod_indexer.lookup_account_application_local_state(application_id=TestContract.app_index,address=TestContract.accounts[2]['pk'])
         local_state_3 = TestContract.algod_indexer.lookup_account_application_local_state(application_id=TestContract.app_index,address=TestContract.accounts[3]['pk'])
+        self.assertIsNotNone(local_state_1['apps-local-states'][0],"Account is opting in, local state should exist")
         self.assertIsNotNone(local_state_2['apps-local-states'][0],"Account is opting in, local state should exist")
         self.assertIsNotNone(local_state_3['apps-local-states'][0],"Account is opting in, local state should exist")
 
@@ -148,25 +151,43 @@ class TestContract(unittest.TestCase):
         # Wait for voting round to begin
         wait_for_round(TestContract.algod_client, global_state['VoteBegin'])
 
+        call_app(TestContract.algod_client, TestContract.accounts[1]['sk'], TestContract.app_index, [b"vote", b"abstain"], [TestContract.accounts[1]['pk']], [TestContract.asset_id])
         call_app(TestContract.algod_client, TestContract.accounts[2]['sk'], TestContract.app_index, [b"vote", b"yes"], [TestContract.accounts[2]['pk']], [TestContract.asset_id])
         call_app(TestContract.algod_client, TestContract.accounts[3]['sk'], TestContract.app_index, [b"vote", b"no"], [TestContract.accounts[3]['pk']], [TestContract.asset_id])
         balances = TestContract.algod_indexer.asset_balances(TestContract.asset_id)
+        local_state_1 = read_local_state(TestContract.algod_client,TestContract.accounts[1]['pk'],TestContract.app_index)
         local_state_2 = read_local_state(TestContract.algod_client,TestContract.accounts[2]['pk'],TestContract.app_index)
         local_state_3 = read_local_state(TestContract.algod_client,TestContract.accounts[3]['pk'],TestContract.app_index)
+        self.assertEqual(local_state_1['voted'], "abstain")
         self.assertEqual(local_state_2['voted'], "yes")
         self.assertEqual(local_state_3['voted'], "no")
         for b in balances["balances"]:
+            if b['address'] == TestContract.accounts[1]['pk']:
+                self.assertEqual(local_state_1['ENB'], b['amount'])
             if b['address'] == TestContract.accounts[2]['pk']:
                 self.assertEqual(local_state_2['ENB'], b['amount'])
             if b['address'] == TestContract.accounts[3]['pk']:
                 self.assertEqual(local_state_3['ENB'], b['amount'])
         
         global_state = read_global_state(TestContract.algod_client, TestContract.accounts[1]['pk'], TestContract.app_index)
-        print(global_state)
+        self.assertEqual(global_state["abstain"], local_state_1['ENB'])
         self.assertEqual(global_state["yes"], local_state_2['ENB'])
         self.assertEqual(global_state["no"], local_state_3['ENB'])
 
-    def test_8_win(self):
+    def test_8_clear_close_app(self):
+        global_state_before = read_global_state(TestContract.algod_client, TestContract.accounts[1]['pk'], TestContract.app_index)
+        close_out_app(TestContract.algod_client, TestContract.accounts[2]['sk'], TestContract.app_index)
+        clear_app(TestContract.algod_client, TestContract.accounts[3]['sk'], TestContract.app_index)
+        local_state_2 = TestContract.algod_indexer.lookup_account_application_local_state(application_id=TestContract.app_index,address=TestContract.accounts[2]['pk'])
+        local_state_3 = TestContract.algod_indexer.lookup_account_application_local_state(application_id=TestContract.app_index,address=TestContract.accounts[3]['pk'])
+        self.assertEqual(local_state_2['apps-local-states'], [], "CloseOut broke on removing local state")
+        self.assertEqual(local_state_3['apps-local-states'], [], "ClearState broke on removing local state")
+
+        global_state_after = read_global_state(TestContract.algod_client, TestContract.accounts[1]['pk'], TestContract.app_index)
+        self.assertLess(global_state_after['yes'], global_state_before['yes'], "CloseOut broke on decreasing global state")
+        self.assertLess(global_state_after['no'], global_state_before['no'], "ClearState broke on decreasing global state")
+
+    def test_9_0_win(self):
         global_state = read_global_state(TestContract.algod_client, TestContract.accounts[1]['pk'], TestContract.app_index)
         # Wait for voting round to end
         wait_for_round(TestContract.algod_client, global_state['VoteEnd'])
@@ -188,28 +209,24 @@ class TestContract(unittest.TestCase):
                     max_votes_choice = key
         
         self.assertGreater(global_state[max_votes_choice], global_state['no'])
-        #self.assertGreater(global_state[max_votes_choice], global_state['abstain'])
+        self.assertGreater(global_state[max_votes_choice], global_state['yes'])
     
-    def test_9_0_clear_app(self):
-        #global_state_before = read_global_state(TestContract.algod_client, TestContract.accounts[1]['pk'], TestContract.app_index)
-        clear_app(TestContract.algod_client, TestContract.accounts[2]['sk'], TestContract.app_index)
-        clear_app(TestContract.algod_client, TestContract.accounts[3]['sk'], TestContract.app_index)
-        local_state_2 = TestContract.algod_indexer.lookup_account_application_local_state(application_id=TestContract.app_index,address=TestContract.accounts[2]['pk'])
-        local_state_3 = TestContract.algod_indexer.lookup_account_application_local_state(application_id=TestContract.app_index,address=TestContract.accounts[3]['pk'])
-        self.assertEqual(local_state_2['apps-local-states'], [])
-        self.assertEqual(local_state_3['apps-local-states'], [])
+    def test_9_1_clear_app(self):
+        global_state_before = read_global_state(TestContract.algod_client, TestContract.accounts[1]['pk'], TestContract.app_index)
+        clear_app(TestContract.algod_client, TestContract.accounts[1]['sk'], TestContract.app_index)
+        local_state = TestContract.algod_indexer.lookup_account_application_local_state(application_id=TestContract.app_index,address=TestContract.accounts[1]['pk'])
+        self.assertEqual(local_state['apps-local-states'], [], "ClearState broke on removing local state")
 
         global_state_after = read_global_state(TestContract.algod_client, TestContract.accounts[1]['pk'], TestContract.app_index)
-        print(global_state_after)
-        # self.assertLess(global_state_after['yes'], global_state_before['yes'])
-        # self.assertLess(global_state_after['no'], global_state_before['no'])
+        self.assertEqual(global_state_after['yes'], global_state_before['yes'], "ClearState should not decrease global state after voting end.")
 
-    def test_9_1_delete_app(self):
+
+    def test_9_2_delete_app(self):
         delete_app(TestContract.algod_client, TestContract.accounts[1]['sk'], TestContract.app_index)
         response = TestContract.algod_indexer.applications(application_id=TestContract.app_index,include_all=True)
         self.assertTrue(response['application']['deleted'])
-
-    def test_9_2_close_asa(self):
+    
+    def test_9_3_close_asa(self):
         close_asa(TestContract.algod_client, TestContract.accounts[1]['pk'], TestContract.accounts[2]['sk'], TestContract.asset_id)
         close_asa(TestContract.algod_client, TestContract.accounts[1]['pk'], TestContract.accounts[3]['sk'], TestContract.asset_id)
         balances = TestContract.algod_indexer.asset_balances(TestContract.asset_id)
@@ -219,15 +236,15 @@ class TestContract(unittest.TestCase):
             if b['address'] == TestContract.accounts[3]['pk']:
                 self.assertEqual(b['amount'], 0, "ASA balance still exists")
     
-    def test_9_3_delete_asa(self):
+    def test_9_4_delete_asa(self):
         delete_asa(TestContract.algod_client, TestContract.accounts[1]['sk'], TestContract.asset_id)
 
-    def test_9_4_return_fund(self):
+    def test_9_5_return_fund(self):
         addr = account.address_from_private_key(TestContract.funding_sk)
         return_fund(TestContract.algod_client, addr, TestContract.accounts)
         response = TestContract.algod_indexer.account_info(address=addr)
         balance = response['account']['amount']
-        self.assertGreater(balance, 1000000)
+        self.assertGreater(balance, 1000000, "Funds where not returned appropriatly")
 
 def tearDownClass(self) -> None:
     return super().tearDown()
