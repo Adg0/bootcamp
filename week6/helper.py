@@ -342,6 +342,10 @@ def call_app(client, private_key, index, app_args, accounts, foreign_assets):
 
     # sign transaction
     signed_txn = txn.sign(private_key)
+    drr = create_dryrun(client, [signed_txn])
+    filename = "dryrun.msgp"
+    with open(filename, "wb") as f:
+        f.write(base64.b64decode(encoding.msgpack_encode(drr)))
     tx_id = signed_txn.transaction.get_txid()
 
     # send transaction

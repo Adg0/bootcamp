@@ -1,0 +1,18 @@
+#pragma version 6
+txn RekeyTo
+global ZeroAddress
+==
+txn Fee
+global MinTxnFee
+<=
+&&
+txn TypeEnum
+int appl
+==
+&&
+txn ApplicationID
+arg 0
+btoi
+==
+&&
+return
