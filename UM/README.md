@@ -3,7 +3,60 @@
 ## Motivation
 
 https://www.reddit.com/r/AlgorandOfficial/comments/prs7b8/private_transactions_in_algorand/
+![reddit post about anonymity](./docs/um_reddit.png)
+![reddit response on post](./docs/um_reddit_resp.png)
 
-Purchase with anonymity
+Purchase with anonymity: to hide financial transaction
+
 Medical expenses
+
 Donations for charity
+
+![Mixer idea drawing](./docs/Mixer_idea.jpg)
+
+## Architecture
+
+Depositor makes a deposit with app call to mixer contract. That is making a deposit of 5 Algos.
+
+Withdrawal calls are made from a relay to preserve anonymity.
+The relay is built as delegated contract; that is a smart signature.
+A relay is used to break link to new account.
+
+### Depositing
+
+Verify call sent 5 Algos
+
+Global state `next` is incremented
+
+`Hash(secretX)` is added to hash box
+
+`MerkleProof(next)` is calculated
+
+Global state `MerkelProof` is updated with MerkleProof(next) calculated value.
+
+### Withdrawing
+
+Password is sent as argument, example: `secretP`.
+
+Search nullifer box that no entry for `Hash(secretP)` is available.
+
+Search hash box that their exsists `Hash(secretP)`
+
+Update nullifier box by adding entry `Hash(secretP)`
+
+Send Atomic transaction with:
+
+```
+Txn.account[0] gets 100k microAlgo: that is the relay fee
+Txn.account[1] gets 5 Algo - relayFee - mixerFee
+```
+
+## ToDo
+
+[x] Relay
+[ ] Relay test
+[ ] Mixer contract
+[ ] Mixer test
+[ ] Frontend wallet connect
+[ ] Documentation
+[ ] Presentation
