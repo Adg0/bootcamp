@@ -13,8 +13,6 @@ def approval_program():
         [Txn.application_id() == Int(0), on_creation],
         [Txn.on_completion() == OnComplete.DeleteApplication, Return(is_creator)],
         [Txn.on_completion() == OnComplete.UpdateApplication, Return(is_creator)],
-        [Txn.on_completion() == OnComplete.CloseOut, on_closeout],
-        [Txn.on_completion() == OnComplete.OptIn, on_register],
     )
 
     return program
