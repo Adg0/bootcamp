@@ -12,9 +12,9 @@ Medical expenses
 
 Donations for charity
 
-![Mixer idea drawing](./docs/Mixer_idea.jpg)
-
 ## Architecture
+
+![Mixer idea drawing](./docs/Mixer_idea.jpg)
 
 Depositor makes a deposit with app call to mixer contract. That is making a deposit of 5 Algos.
 
