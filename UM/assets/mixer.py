@@ -3,6 +3,7 @@ from pyteal import *
 def approval_program():
     on_creation = Seq(
         [
+            App.globalPut(Bytes("Creator"), Txn.sender()),
             Return(Int(1)),
         ]
     )
@@ -13,6 +14,7 @@ def approval_program():
         [Txn.application_id() == Int(0), on_creation],
         [Txn.on_completion() == OnComplete.DeleteApplication, Return(is_creator)],
         [Txn.on_completion() == OnComplete.UpdateApplication, Return(is_creator)],
+        [Txn.on_completion() == OnComplete.NoOp, Return(Int(1))],
     )
 
     return program

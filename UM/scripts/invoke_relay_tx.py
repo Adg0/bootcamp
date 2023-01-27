@@ -1,10 +1,18 @@
 import os
-import json
+import sys
 import base64
+import pickle
 from dotenv import load_dotenv
-from assets.relay_lsig import *
+from algosdk import account, mnemonic
+from algosdk.v2client import algod
+from algosdk.future.transaction import *
+from pyteal import compileTeal, Mode
 
 load_dotenv("./.env")
+p = os.environ.get("PROJECT_PATH")
+sys.path.insert(0,p)
+
+from assets.relay_lsig import *
 
 m = os.environ.get("MNEMONIC") # This is YOUR address. Make sure it is funded with atleast 4Algo.
 sk = mnemonic.to_private_key(m)
@@ -31,7 +39,7 @@ def generate_accounts(number_of_accounts):
 
     print("Account 1 address: {}".format(accounts[1]['pk']))
     print("Account 2 address: {}".format(accounts[2]['pk']))
-    print("Account 3 address: {}".format(accounts[3]['pk']))
+    # print("Account 3 address: {}".format(accounts[3]['pk']))
 
     return accounts
 
@@ -65,81 +73,33 @@ def fund_accounts(algod_client, private_key, accounts, amount):
         account_info = algod_client.account_info(accounts[i]['pk'])
         print("{}: {} microAlgos".format(accounts[i]['pk'], account_info.get('amount')))
 
-
-# create new application
-def create_app(
-    client,
-    private_key,
-    approval_program,
-    clear_program,
-    global_schema,
-    local_schema,
-    app_args,
-):
-    # define sender as creator
-    sender = account.address_from_private_key(private_key)
-
-    # declare on_complete as NoOp
-    on_complete = OnComplete.NoOpOC.real
-
-    # get node suggested parameters
-    params = client.suggested_params()
-
-    # create unsigned transaction
-    txn = ApplicationCreateTxn(
-        sender,
-        params,
-        on_complete,
-        approval_program,
-        clear_program,
-        global_schema,
-        local_schema,
-        app_args,
-    )
-
-    # sign transaction
-    signed_txn = txn.sign(private_key)
-    tx_id = signed_txn.transaction.get_txid()
-
-    # send transaction
-    client.send_transactions([signed_txn])
-
-    # await confirmation
-    wait_for_confirmation(client, tx_id)
-
-    # display results
-    transaction_response = client.pending_transaction_info(tx_id)
-    app_id = transaction_response["application-index"]
-    print("Created new app-id:", app_id)
-
-    return app_id
-
-
+# create delegation
 def create_lsig(algod_client, private_key, app_index):
-    with open("./artifacts/relay_auth.lsig", "w") as f:
+    with open("./artifacts/relay_auth.lsig", "wb") as f:
         compiled = compileTeal(relay_auth(), Mode.Signature, version=6)
-        compile_response = algod_client.compile(compiled)
+        response = algod_client.compile(compiled)
+
         # Create logic sig
         programstr = response['result']
         t = programstr.encode("ascii")
-        # program = b"hex-encoded-program"
         program = base64.decodebytes(t)
+
         arg1 = (app_index).to_bytes(8, 'big')
         lsig = LogicSigAccount(program, args=[arg1])
         lsig.sign(private_key)
-        print(lsig)
-        f.write(lsig)
 
-def call_app(client, lsig, index, app_args, accounts, foreign_assets):
+        pickle.dump(lsig, f, pickle.HIGHEST_PROTOCOL)
+
+def call_app(client, lsig, index):
     # declare sender
-    sender = lsig.address_from_private_key(lsig)
+    sender = lsig.address()
     print("Call from account:", sender)
 
     # get node suggested parameters
     params = client.suggested_params()
 
     # create unsigned transaction
-    txn = ApplicationNoOpTxn(sender=sender, sp=params, index=index, app_args=app_args, accounts=accounts, foreign_assets=foreign_assets)
+    txn = ApplicationNoOpTxn(sender=sender, sp=params, index=index)
 
     # sign transaction
     lstx = LogicSigTransaction(txn, lsig)
@@ -156,4 +116,16 @@ def call_app(client, lsig, index, app_args, accounts, foreign_assets):
     wait_for_confirmation(client, tx_id)
 
 def main():
-    create_lsig()
+    # Initialize an algod client
+    algod_client = algod.AlgodClient(algod_token=algod_token, algod_address=algod_address)
+    app_id = 387
+    accounts = generate_accounts(2)
+    accounts_ = generate_accounts(2)
+    fund_accounts(algod_client, sk, accounts, 1000000)
+    create_lsig(algod_client, accounts[1]['sk'], app_id)
+    with open('./artifacts/relay_auth.lsig', 'rb') as f:
+        lsig = pickle.load(f)
+        call_app(algod_client, lsig, app_id)
+
+if __name__ == "__main__":
+    main()
