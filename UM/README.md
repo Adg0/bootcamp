@@ -22,6 +22,13 @@ Withdrawal calls are made from a relay to preserve anonymity.
 The relay is built as delegated contract; that is a smart signature.
 A relay is used to break link to new account.
 
+Safety is taken to protect relay delegation; that is
+
+1. Rekey check
+2. Fee check
+3. Allows only application calls, specifically to mixer app
+4. On completion is restricted to NoOp
+
 ### Depositing
 
 Verify call sent 5 Algos
@@ -53,17 +60,11 @@ Txn.account[1] gets 5 Algo - relayFee - mixerFee
 
 ## ToDo
 
-[x] Relay
-
-[ ] Relay test
-
-[ ] Mixer contract
-
-[ ] Mixer test
-
-[ ] Frontend wallet connect
-
-[ ] Documentation
-
-[ ] Presentation
+- [x] Relay
+- [x] Relay test
+- [ ] Mixer contract
+- [ ] Mixer test
+- [ ] Frontend wallet connect
+- [ ] Documentation
+- [ ] Presentation
 

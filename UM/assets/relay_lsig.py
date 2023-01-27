@@ -11,7 +11,7 @@ Relay Delegation: for anonymising mixer deposit withdrawal
 def relay_auth():
     safety_cond  = Txn.rekey_to() == Global.zero_address()
     fee_cond = Txn.fee() <= Global.min_txn_fee()
-    app_cond = Txn.type_enum() == TxnType.ApplicationCall
+    app_cond = And(Txn.type_enum() == TxnType.ApplicationCall, Txn.on_completion() == OnComplete.NoOp)
     restrict_app = Txn.application_id() == Btoi(Arg(0))
 
     program = And(safety_cond, fee_cond, app_cond, restrict_app)

@@ -123,6 +123,7 @@ def main():
     accounts_ = generate_accounts(2)
     fund_accounts(algod_client, sk, accounts, 1000000)
     create_lsig(algod_client, accounts[1]['sk'], app_id)
+
     with open('./artifacts/relay_auth.lsig', 'rb') as f:
         lsig = pickle.load(f)
         call_app(algod_client, lsig, app_id)

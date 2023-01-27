@@ -111,15 +111,6 @@ def main():
     # create list of bytes for app args
     app_args = []
 
-    # update application
-    params = algod_client.suggested_params()
-    txn = ApplicationUpdateTxn(sender=pk,sp=params,index=387,approval_program=approval_program_compiled,clear_program=clear_state_program_compiled)
-    signed_txn = txn.sign(sk)
-    tx_id = signed_txn.transaction.get_txid()
-    algod_client.send_transactions([signed_txn])
-    wait_for_confirmation(algod_client, tx_id)
-
-"""
     app_id = create_app(
         algod_client,
         sk,
@@ -133,6 +124,16 @@ def main():
     print(app_id)
 
 """
+    # update application
+    app_id=387
+    params = algod_client.suggested_params()
+    txn = ApplicationUpdateTxn(sender=pk,sp=params,index=app_id,approval_program=approval_program_compiled,clear_program=clear_state_program_compiled)
+    signed_txn = txn.sign(sk)
+    tx_id = signed_txn.transaction.get_txid()
+    algod_client.send_transactions([signed_txn])
+    wait_for_confirmation(algod_client, tx_id)
+"""
+
 
 if __name__ == "__main__":
     main()
