@@ -63,7 +63,7 @@ Txn.account[1] gets 5 Algo - relayFee - mixerFee
 - [x] Relay
 - [x] Relay test
 - [x] Mixer contract
-- [ ] Mixer test
+- [x] Mixer test
 - [ ] Frontend wallet connect
 - [ ] Documentation
 - [ ] Presentation
