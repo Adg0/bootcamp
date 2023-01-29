@@ -11,6 +11,7 @@ load_dotenv("./.env")
 m = os.environ.get("MNEMONIC") # This is YOUR address. Make sure it is funded with atleast 4Algo.
 sk = mnemonic.to_private_key(m)
 pk = account.address_from_private_key(sk)
+app_id = 395
 
 # Node address and token.
 algod_address = "http://localhost:4001" 

@@ -97,6 +97,36 @@ def fund_app(client, private_key, index, amount):
 
     return tx_id
 
+def update_mixer(client, private_key, index, approval_program, clear_program):
+    # define sender as creator
+    sender = account.address_from_private_key(private_key)
+
+    # get node suggested parameters
+    params = client.suggested_params()
+
+    # create unsigned transaction
+    txn = ApplicationUpdateTxn(
+        sender=sender,
+        sp=params,
+        index=index,
+        approval_program=approval_program,
+        clear_program=clear_program
+    )
+
+    # sign transaction
+    signed_txn = txn.sign(private_key)
+    tx_id = signed_txn.transaction.get_txid()
+
+    drr = create_dryrun(client, [signed_txn])
+    filename = "dryrun.msgp"
+    with open(filename, "wb") as f:
+        f.write(base64.b64decode(encoding.msgpack_encode(drr)))
+
+    # send transaction
+    client.send_transactions([signed_txn])
+
+    # await confirmation
+    wait_for_confirmation(client, tx_id)
 
 
 def main():
@@ -148,17 +178,10 @@ def main():
 
     tx_id = fund_app(algod_client, sk, app_id, 2000000)
     print("confirmed: {}".format(tx_id))
-
-
     """
+
     # update application 
-    app_id=395
-    params = algod_client.suggested_params()
-    txn = ApplicationUpdateTxn(sender=pk,sp=params,index=app_id,approval_program=approval_program_compiled,clear_program=clear_state_program_compiled)
-    signed_txn = txn.sign(sk)
-    tx_id = signed_txn.transaction.get_txid()
-    algod_client.send_transactions([signed_txn])
-    wait_for_confirmation(algod_client, tx_id)
+    update_mixer(algod_client, sk, app_id, approval_program_compiled, clear_state_program_compiled)
 
 
 if __name__ == "__main__":

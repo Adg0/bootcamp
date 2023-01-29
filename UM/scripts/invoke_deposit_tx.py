@@ -1,6 +1,4 @@
 import base64
-import pickle
-from dotenv import load_dotenv
 from hashlib import sha256
 from algosdk import account, mnemonic, logic
 from algosdk.v2client import algod
@@ -43,10 +41,9 @@ def make_deposit(client, private_key, index, app_args, boxes, amount):
 def main():
     # Initialize an algod client
     algod_client = algod.AlgodClient(algod_token=algod_token, algod_address=algod_address)
-    app_id = 395
     amount = 5000000
-    nullifier = "20304050"
-    secret = "passKey"
+    nullifier = "30405060"
+    secret = "passKeys"
     s_n = secret + nullifier
     h = sha256(s_n.encode('utf-8')).hexdigest()
     print(s_n)

@@ -60,15 +60,14 @@ def withdraw_with_lsig(client, lsig, index, app_args, boxes, accounts):
 def main():
     # Initialize an algod client
     algod_client = algod.AlgodClient(algod_token=algod_token, algod_address=algod_address)
-    app_id = 395
     accounts = generate_accounts(1)
     #accounts_ = generate_accounts(1)
     #fund_accounts(algod_client, sk, accounts, 1000000)
     #create_lsig(algod_client, accounts_[1]['sk'], app_id)
 
     amount = 5000000
-    nullifier = "20304050"
-    secret = "passKey"
+    nullifier = "30405060"
+    secret = "passKeys"
     with open('./artifacts/relay_auth.lsig', 'rb') as f:
         lsig = pickle.load(f)
         withdraw_with_lsig(algod_client, lsig, app_id, [b"withdraw",secret.encode('utf-8'),nullifier.encode('utf-8'),accounts[1]['pk'].encode('utf-8')],[[0,"5algo"],[0,"NF"],[0,""]], [accounts[1]['pk']])
