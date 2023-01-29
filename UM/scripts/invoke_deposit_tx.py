@@ -48,7 +48,9 @@ def main():
     h = sha256(s_n.encode('utf-8')).hexdigest()
     print(s_n)
     print(h)
-    make_deposit(algod_client, sk, app_id, [b"deposit",h.encode('utf-8')], [[app_id,"5algo"]], amount)
+    accounts = generate_accounts(1)
+    fund_accounts(algod_client, sk, accounts, 6000000)
+    make_deposit(algod_client, accounts[1]['sk'], app_id, [b"deposit",h.encode('utf-8')], [[app_id,"5algo"]], amount)
     print("Made a deposit")
 
 if __name__ == "__main__":

@@ -62,7 +62,7 @@ def main():
     algod_client = algod.AlgodClient(algod_token=algod_token, algod_address=algod_address)
     accounts = generate_accounts(1)
     #accounts_ = generate_accounts(1)
-    #fund_accounts(algod_client, sk, accounts, 1000000)
+    #fund_accounts(algod_client, sk, accounts_, 1000000)
     #create_lsig(algod_client, accounts_[1]['sk'], app_id)
 
     amount = 5000000

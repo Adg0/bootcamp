@@ -66,10 +66,10 @@ def approval_program():
                 nf_length,
                 If(Not(nf_length.hasValue()), Assert(App.box_create(Bytes("NF"), Int(992)))),
                 # loop
-                l.store(nf_length.value() - Int(32)),
+                l.store(nf_length.value()),
                 # opcode budget extension
                 opup.maximize_budget(Int(4800)),
-                For(i.store(Int(0)), i.load() < l.load(), i.store(i.load() + Int(1))).Do(
+                For(i.store(Int(0)), i.load() + Int(32) <= l.load(), i.store(i.load() + Int(1))).Do(
                     If(App.box_extract(Bytes("NF"), i.load(), Int(32)) == Global.zero_address()).Then(
                         App.box_replace(Bytes("NF"), i.load(), Sha256(Txn.application_args[2])),
                         Break()

@@ -11,11 +11,11 @@ load_dotenv("./.env")
 m = os.environ.get("MNEMONIC") # This is YOUR address. Make sure it is funded with atleast 4Algo.
 sk = mnemonic.to_private_key(m)
 pk = account.address_from_private_key(sk)
-app_id = 395
+app_id = 156345278 #395
 
 # Node address and token.
-algod_address = "http://localhost:4001" 
-algod_token = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+algod_address = "https://testnet-api.algonode.cloud" #"http://localhost:4001" 
+algod_token = "" #"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 
 # Generating testing accounts
 def generate_accounts(number_of_accounts):
