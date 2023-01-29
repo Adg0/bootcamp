@@ -3,25 +3,18 @@ import sys
 import json
 import base64
 from dotenv import load_dotenv
-from algosdk import account, mnemonic
+from algosdk import account, mnemonic, logic
 from algosdk.v2client import algod
 from algosdk.future import transaction
 from algosdk.future.transaction import *
 from pyteal import compileTeal, Mode
+from utils import *
 
 load_dotenv("./.env")
 p = os.environ.get("PROJECT_PATH")
 sys.path.insert(0,p)
 
 from assets.mixer import approval_program, clear_state_program
-
-m = os.environ.get("MNEMONIC") # This is YOUR address. Make sure it is funded with atleast 4Algo.
-sk = mnemonic.to_private_key(m)
-pk = account.address_from_private_key(sk)
-
-# Node address and token.
-algod_address = "http://localhost:4001" 
-algod_token = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 
 # helper function to compile program source
 def compile_program(client, source_code):
@@ -63,6 +56,11 @@ def create_app(
     signed_txn = txn.sign(private_key)
     tx_id = signed_txn.transaction.get_txid()
 
+    drr = create_dryrun(client, [signed_txn])
+    filename = "dryrun.msgp"
+    with open(filename, "wb") as f:
+        f.write(base64.b64decode(encoding.msgpack_encode(drr)))
+
     # send transaction
     client.send_transactions([signed_txn])
 
@@ -76,6 +74,30 @@ def create_app(
 
     return app_id
 
+def fund_app(client, private_key, index, amount):
+    # define sender as creator
+    sender = account.address_from_private_key(private_key)
+    # get application address
+    app_addr = logic.get_application_address(index)
+
+    # get node suggested parameters
+    params = client.suggested_params()
+
+    txn = PaymentTxn(sender, params, app_addr, amount)
+
+    # sign transaction
+    signed_txn = txn.sign(private_key)
+    tx_id = signed_txn.transaction.get_txid()
+
+    # send transaction
+    client.send_transactions([signed_txn])
+
+    # await confirmation
+    wait_for_confirmation(client, tx_id)
+
+    return tx_id
+
+
 
 def main():
     # Initialize an algod client
@@ -83,8 +105,8 @@ def main():
 
     local_ints = 0
     local_bytes = 0
-    global_ints = 1
-    global_bytes = 1
+    global_ints = 2
+    global_bytes = 2
     global_schema = StateSchema(global_ints, global_bytes)
     local_schema = StateSchema(local_ints, local_bytes)
 
@@ -92,7 +114,7 @@ def main():
     approval_program_ast = approval_program()
     # compile program to TEAL assembly
     approval_program_teal = compileTeal(
-        approval_program_ast, mode=Mode.Application, version=6
+        approval_program_ast, mode=Mode.Application, version=8
     )
     # compile program to binary
     approval_program_compiled = compile_program(algod_client, approval_program_teal)
@@ -101,7 +123,7 @@ def main():
     clear_state_program_ast = clear_state_program()
     # compile program to TEAL assembly
     clear_state_program_teal = compileTeal(
-        clear_state_program_ast, mode=Mode.Application, version=6
+        clear_state_program_ast, mode=Mode.Application, version=8
     )
     # compile program to binary
     clear_state_program_compiled = compile_program(
@@ -111,6 +133,7 @@ def main():
     # create list of bytes for app args
     app_args = []
 
+    """
     app_id = create_app(
         algod_client,
         sk,
@@ -123,16 +146,19 @@ def main():
 
     print(app_id)
 
-"""
-    # update application
-    app_id=387
+    tx_id = fund_app(algod_client, sk, app_id, 2000000)
+    print("confirmed: {}".format(tx_id))
+
+
+    """
+    # update application 
+    app_id=395
     params = algod_client.suggested_params()
     txn = ApplicationUpdateTxn(sender=pk,sp=params,index=app_id,approval_program=approval_program_compiled,clear_program=clear_state_program_compiled)
     signed_txn = txn.sign(sk)
     tx_id = signed_txn.transaction.get_txid()
     algod_client.send_transactions([signed_txn])
     wait_for_confirmation(algod_client, tx_id)
-"""
 
 
 if __name__ == "__main__":

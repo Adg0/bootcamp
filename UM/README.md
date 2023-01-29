@@ -31,11 +31,11 @@ Safety is taken to protect relay delegation; that is
 
 ### Depositing
 
-Verify call sent 5 Algos
+Verify call sent is sent with 5 Algos, in atomic transction to pool.
 
 Global state `next` is incremented
 
-`Hash(secretX)` is added to hash box
+`Hash(secretX, nullfier)` is added to hash box
 
 `MerkleProof(next)` is calculated
 
@@ -43,18 +43,18 @@ Global state `MerkelProof` is updated with MerkleProof(next) calculated value.
 
 ### Withdrawing
 
-Password is sent as argument, example: `secretP`.
+Password is sent as argument, example: `secretP, nullifier`.
 
-Search nullifer box that no entry for `Hash(secretP)` is available.
+Search nullifer box that no entry for `Hash(nullifierP)` is available.
 
 Search hash box that their exsists `Hash(secretP)`
 
-Update nullifier box by adding entry `Hash(secretP)`
+Update nullifier box by adding entry `Hash(nullifierP)`
 
 Send Atomic transaction with:
 
 ```
-Txn.account[0] gets 100k microAlgo: that is the relay fee
+Txn.account[0] gets 100k microAlgo: that is the relay fee, anyone can create another relay to collect relay fees
 Txn.account[1] gets 5 Algo - relayFee - mixerFee
 ```
 
@@ -62,7 +62,7 @@ Txn.account[1] gets 5 Algo - relayFee - mixerFee
 
 - [x] Relay
 - [x] Relay test
-- [ ] Mixer contract
+- [x] Mixer contract
 - [ ] Mixer test
 - [ ] Frontend wallet connect
 - [ ] Documentation

@@ -9,6 +9,10 @@ global MinTxnFee
 txn TypeEnum
 int appl
 ==
+txn OnCompletion
+int NoOp
+==
+&&
 &&
 txn ApplicationID
 arg 0
